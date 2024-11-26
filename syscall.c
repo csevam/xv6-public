@@ -6,6 +6,15 @@
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"
+#include "trace.h"
+
+extern int e_flag;
+extern int s_flag;
+extern int f_flag;
+
+int e_flag = -1;;
+int s_flag = 0;
+int f_flag = 0;
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
@@ -103,34 +112,126 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_trace(void);
+extern int sys_setEFlag(void);
+extern int sys_setSFlag(void);
+extern int sys_setFFlag(void);
+extern int sys_dump(void);
 
 static int (*syscalls[])(void) = {
-[SYS_fork]    sys_fork,
-[SYS_exit]    sys_exit,
-[SYS_wait]    sys_wait,
-[SYS_pipe]    sys_pipe,
-[SYS_read]    sys_read,
-[SYS_kill]    sys_kill,
-[SYS_exec]    sys_exec,
-[SYS_fstat]   sys_fstat,
-[SYS_chdir]   sys_chdir,
-[SYS_dup]     sys_dup,
-[SYS_getpid]  sys_getpid,
-[SYS_sbrk]    sys_sbrk,
-[SYS_sleep]   sys_sleep,
-[SYS_uptime]  sys_uptime,
-[SYS_open]    sys_open,
-[SYS_write]   sys_write,
-[SYS_mknod]   sys_mknod,
-[SYS_unlink]  sys_unlink,
-[SYS_link]    sys_link,
-[SYS_mkdir]   sys_mkdir,
-[SYS_close]   sys_close,
+    [SYS_fork] sys_fork,   [SYS_exit] sys_exit,     [SYS_wait] sys_wait,
+    [SYS_pipe] sys_pipe,   [SYS_read] sys_read,     [SYS_kill] sys_kill,
+    [SYS_exec] sys_exec,   [SYS_fstat] sys_fstat,   [SYS_chdir] sys_chdir,
+    [SYS_dup] sys_dup,     [SYS_getpid] sys_getpid, [SYS_sbrk] sys_sbrk,
+    [SYS_sleep] sys_sleep, [SYS_uptime] sys_uptime, [SYS_open] sys_open,
+    [SYS_write] sys_write, [SYS_mknod] sys_mknod,   [SYS_unlink] sys_unlink,
+    [SYS_link] sys_link,   [SYS_mkdir] sys_mkdir,   [SYS_close] sys_close,
+    [SYS_trace] sys_trace, [SYS_setEFlag] sys_setEFlag, [SYS_setSFlag] sys_setSFlag,
+    [SYS_setFFlag] sys_setFFlag, [SYS_dump] sys_dump,
 };
+
+static char* syscall_names[] = {
+    [SYS_fork] "fork",
+    [SYS_exit] "exit",
+    [SYS_wait] "wait",
+    [SYS_pipe] "pipe",
+    [SYS_read] "read",
+    [SYS_kill] "kill",
+    [SYS_exec] "exec",
+    [SYS_fstat] "fstat",
+    [SYS_chdir] "chdir",
+    [SYS_dup] "dup",
+    [SYS_getpid] "getpid",
+    [SYS_sbrk] "sbrk",
+    [SYS_sleep] "sleep",
+    [SYS_uptime] "uptime",
+    [SYS_open] "open",
+    [SYS_write] "write",
+    [SYS_mknod] "mknod",
+    [SYS_unlink] "unlink",
+    [SYS_link] "link",
+    [SYS_mkdir] "mkdir",
+    [SYS_close] "close",
+    [SYS_trace] "trace",
+    [SYS_dump] "dump",
+};
+
+int sys_trace(void) {
+    int n;
+    argint(0, &n);
+    proc->traced = (n & T_TRACE) ? n:0;
+    return 0;
+}
+
+int strcompare(char str1[], char str2[]) {
+    int ctr = 0;
+    while(str1[ctr] == str2[ctr]) {
+        if(str1[ctr]=='\0'||str2[ctr]=='\0')
+        break;
+        ctr++;
+    }
+    if(str1[ctr]=='\0' && str2[ctr]=='\0')
+        return 0;
+    else
+        return -1;
+}
+
+int sys_setEFlag(void) {
+    argint(0, &e_flag);
+    return 0;
+}
+
+int sys_setSFlag(void) {
+    argint(0, &s_flag);
+    return 0;
+}
+
+int sys_setFFlag(void) {
+    argint(0, &f_flag);
+    return 0;
+}
+
+char dumpBuff[N][100];
+int headIndex=0;
+int* headptr = &headIndex;
+int tailIndex=0;
+int* tailptr = &tailIndex;
+int passedZero =0;
+int* passedZeroptr = &passedZero;
+
+void addToBuff(char* event) {
+    int head = *headptr;
+    int tail = *tailptr;
+    int s=0;
+    int passedZeroFunc = *passedZeroptr;
+    if(head == tail && passedZero) {
+         memset(dumpBuff[tail],0,strlen(dumpBuff[tail]));
+         tail = (tail+1)%N;
+    }
+    while(event[s] != '\0') {
+          dumpBuff[head][s] = event[s];
+          s+=1;
+    }
+    head= (head+1)%N;
+    if(head==0) {
+        passedZeroFunc =1;
+    }
+    *headptr = head;
+    *tailptr = tail;
+    *passedZeroptr = passedZeroFunc;
+}
+
+int sys_dump(void) {
+    for(int i=0; i<N && dumpBuff[i]!=0; i+=1) {
+        cprintf("%s\n", dumpBuff[i]);
+    }
+    return 0;
+}
 
 void
 syscall(void)
 {
+  // int num,i,num2;
   int num;
   struct proc *curproc = myproc();
 
@@ -142,4 +243,9 @@ syscall(void)
             curproc->pid, curproc->name, num);
     curproc->tf->eax = -1;
   }
+  // i=0,num=0;
+  cprintf("%s:\n",syscall_names[0]);
+
 }
+
+

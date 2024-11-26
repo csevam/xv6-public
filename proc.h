@@ -1,5 +1,6 @@
 // Per-CPU state
 struct cpu {
+  uchar id;
   uchar apicid;                // Local APIC ID
   struct context *scheduler;   // swtch() here to enter scheduler
   struct taskstate ts;         // Used by x86 to find stack for interrupt
@@ -8,11 +9,13 @@ struct cpu {
   int ncli;                    // Depth of pushcli nesting.
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
+  struct cpu *cpu;
 };
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
-
+extern struct cpu *cpu asm("%gs:0");       // &cpus[cpunum()]
+extern struct proc *proc asm("%gs:4");
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
 // Don't need to save all the segment registers (%cs, etc),
@@ -49,6 +52,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int traced;
 };
 
 // Process memory is laid out contiguously, low addresses first:

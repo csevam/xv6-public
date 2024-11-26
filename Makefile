@@ -181,6 +181,9 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+	_straceTest\
+	_memleak\
+	_dump\
 
 fs.img: mkfs README.md $(UPROGS)
 	./mkfs fs.img README.md $(UPROGS)
