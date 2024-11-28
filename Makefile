@@ -180,6 +180,8 @@ ifndef CPUS
 CPUS := 1
 endif
 
+
+
 QEMUOPTS = \
    -drive file=xv6.img,media=disk,index=0,format=raw \
    -drive file=fs.img,index=1,media=disk,format=raw \
