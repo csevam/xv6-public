@@ -1,11 +1,9 @@
-// Shell.
 
 #include "kernel/types.h"
 #include "user.h"
 #include "kernel/fcntl.h"
 #include "kernel/trace.h"
 
-// Parsed command representation
 #define EXEC 1
 #define REDIR 2
 #define PIPE 3
@@ -76,7 +74,6 @@ int fork1(void); // Fork but panics on failure.
 void panic(char *);
 struct cmd *parsecmd(char *);
 
-// Execute cmd.  Never returns.
 void runcmd(struct cmd *cmd) {
   int p[2];
   struct backcmd *bcmd;
@@ -167,7 +164,6 @@ int main(void) {
   static char buf[100];
   int fd;
 
-  // Assumes three file descriptors open.
   while ((fd = open("console", O_RDWR)) >= 0) {
     if (fd >= 3) {
       close(fd);
@@ -178,11 +174,8 @@ int main(void) {
   int straceRunCalled = 0;
   int straceFlagCalled = 0;
 
-  // Read and run input commands.
   while (getcmd(buf, sizeof(buf)) >= 0) {
     if (buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' ') {
-      // Clumsy but will have to do for now.
-      // Chdir has no effect on the parent if run in the child.
       buf[strlen(buf) - 1] = 0; // chop \n
       if (chdir(buf + 3) < 0)
         printf(2, "cannot cd %s\n", buf + 3);
@@ -307,11 +300,13 @@ int fork1(void) {
   pid = fork();
   if (pid == -1)
     panic("fork");
+  // if (pid == 0 && tracing) {
+  //       // Enable tracing in the child process before any syscalls occur
+  //       trace(T_TRACE | T_ONFORK);
+  // }
   return pid;
 }
 
-// PAGEBREAK!
-// Constructors
 
 struct cmd *execcmd(void) {
   struct execcmd *cmd;
@@ -368,8 +363,6 @@ struct cmd *backcmd(struct cmd *subcmd) {
   cmd->cmd = subcmd;
   return (struct cmd *)cmd;
 }
-// PAGEBREAK!
-// Parsing
 
 char whitespace[] = " \t\r\n\v";
 char symbols[] = "<|>&;()";
@@ -541,7 +534,6 @@ struct cmd *parseexec(char **ps, char *es) {
   return ret;
 }
 
-// NUL-terminate all the counted strings.
 struct cmd *nulterminate(struct cmd *cmd) {
   int i;
   struct backcmd *bcmd;

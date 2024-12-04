@@ -13,7 +13,6 @@ char name[3];
 char *echoargv[] = {"echo", "ALL", "TESTS", "PASSED", 0};
 int stdout = 1;
 
-// does chdir() call iput(p->cwd) in a transaction?
 void iputtest(void) {
   printf(stdout, "iput test\n");
 
@@ -36,7 +35,6 @@ void iputtest(void) {
   printf(stdout, "iput test ok\n");
 }
 
-// does exit() call iput(p->cwd) in a transaction?
 void exitiputtest(void) {
   int pid;
 
@@ -66,17 +64,6 @@ void exitiputtest(void) {
   printf(stdout, "exitiput test ok\n");
 }
 
-// does the error path in open() for attempt to write a
-// directory call iput() in a transaction?
-// needs a hacked kernel that pauses just after the namei()
-// call in sys_open():
-//    if((ip = namei(path)) == 0)
-//      return -1;
-//    {
-//      int i;
-//      for(i = 0; i < 10000; i++)
-//        yield();
-//    }
 void openiputtest(void) {
   int pid;
 
@@ -106,8 +93,6 @@ void openiputtest(void) {
   wait();
   printf(stdout, "openiput test ok\n");
 }
-
-// simple file system tests
 
 void opentest(void) {
   int fd;
@@ -282,8 +267,6 @@ void exectest(void) {
   }
 }
 
-// simple fork and pipe read/write
-
 void pipe1(void) {
   int fds[2], pid;
   int seq, i, n, cc, total;
@@ -334,7 +317,6 @@ void pipe1(void) {
   printf(1, "pipe1 ok\n");
 }
 
-// meant to be run w/ at most two CPUs
 void preempt(void) {
   int pid1, pid2, pid3;
   int pfds[2];
@@ -378,7 +360,6 @@ void preempt(void) {
   printf(1, "preempt ok\n");
 }
 
-// try to find any races between exit and wait
 void exitwait(void) {
   int i, pid;
 
@@ -431,10 +412,6 @@ void mem(void) {
   }
 }
 
-// More file system tests
-
-// two processes write to the same file descriptor
-// is the offset shared? does inode locking work?
 void sharedfd(void) {
   int fd, pid, i, n, nc, np;
   char buf[10];
@@ -484,8 +461,6 @@ void sharedfd(void) {
   }
 }
 
-// four processes write different files at the same
-// time, to test block allocation.
 void fourfiles(void) {
   int fd, pid, i, j, n, total, pi;
   char *names[] = {"f0", "f1", "f2", "f3"};
@@ -549,7 +524,6 @@ void fourfiles(void) {
   printf(1, "fourfiles ok\n");
 }
 
-// four processes create and delete different files in same directory
 void createdelete(void) {
   enum { N = 20 };
   int pid, i, fd, pi;
@@ -620,7 +594,6 @@ void createdelete(void) {
   printf(1, "createdelete ok\n");
 }
 
-// can I unlink a file and still read it?
 void unlinkread(void) {
   int fd, fd1;
 
@@ -724,7 +697,6 @@ void linktest(void) {
   printf(1, "linktest ok\n");
 }
 
-// test concurrent create/link/unlink of the same file
 void concreate(void) {
   char file[3];
   int i, pid, n, fd;
@@ -813,8 +785,6 @@ void concreate(void) {
   printf(1, "concreate ok\n");
 }
 
-// another concurrent link/unlink/create test,
-// to look for deadlocks.
 void linkunlink() {
   int pid, i;
 
@@ -847,7 +817,6 @@ void linkunlink() {
   printf(1, "linkunlink ok\n");
 }
 
-// directory that uses indirect blocks
 void bigdir(void) {
   int i, fd;
   char name[10];
@@ -1069,7 +1038,6 @@ void subdir(void) {
   printf(1, "subdir ok\n");
 }
 
-// test writes that are larger than the log.
 void bigwrite(void) {
   int fd, sz;
 
@@ -1154,7 +1122,6 @@ void bigfile(void) {
 void fourteen(void) {
   int fd;
 
-  // DIRSIZ is 14.
   printf(1, "fourteen test\n");
 
   if (mkdir("12345678901234") != 0) {
@@ -1285,7 +1252,6 @@ void dirfile(void) {
   printf(1, "dir vs file OK\n");
 }
 
-// test that iput() is called at the end of _namei()
 void iref(void) {
   int i, fd;
 
@@ -1317,9 +1283,6 @@ void iref(void) {
   printf(1, "empty file name OK\n");
 }
 
-// test that fork fails gracefully
-// the forktest binary also does this, but it runs out of proc entries first.
-// inside the bigger usertests binary, we run out of memory first.
 void forktest(void) {
   int n, pid;
 
@@ -1361,7 +1324,6 @@ void sbrktest(void) {
   printf(stdout, "sbrk test\n");
   oldbrk = sbrk(0);
 
-  // can one sbrk() less than a page?
   a = sbrk(0);
   int i;
   for (i = 0; i < 5000; i++) {
@@ -1388,7 +1350,6 @@ void sbrktest(void) {
     exit();
   wait();
 
-  // can one grow address space to something big?
 #define BIG (100 * 1024 * 1024)
   a = sbrk(0);
   amt = (BIG) - (uint)a;
@@ -1403,7 +1364,6 @@ void sbrktest(void) {
   *lastaddr = 99;
 #pragma GCC diagnostic pop
 
-  // can one de-allocate?
   a = sbrk(0);
   c = sbrk(-4096);
   if (c == (char *)0xffffffff) {

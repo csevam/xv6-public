@@ -150,8 +150,8 @@ UPROGS=\
 	$U/_usertests\
 	$U/_wc\
 	$U/_zombie\
-	$U/_straceTest\
-	$U/_memleak\
+	$U/_strace_testing\
+	$U/_memory_leak\
 	$U/_dump\
 
 fs.img: mkfs/mkfs README.md $(UPROGS)

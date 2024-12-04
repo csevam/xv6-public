@@ -1,5 +1,3 @@
-// Simple grep.  Only supports ^ . * $ operators.
-
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user.h"
@@ -59,8 +57,6 @@ int main(int argc, char *argv[]) {
   exit();
 }
 
-// Regexp matcher from Kernighan & Pike,
-// The Practice of Programming, Chapter 9.
 
 int matchhere(char *, char *);
 int matchstar(int, char *, char *);
@@ -75,7 +71,6 @@ int match(char *re, char *text) {
   return 0;
 }
 
-// matchhere: search for re at beginning of text
 int matchhere(char *re, char *text) {
   if (re[0] == '\0')
     return 1;
@@ -88,7 +83,6 @@ int matchhere(char *re, char *text) {
   return 0;
 }
 
-// matchstar: search for c*re at beginning of text
 int matchstar(int c, char *re, char *text) {
   do { // a * matches zero or more instances
     if (matchhere(re, text))
